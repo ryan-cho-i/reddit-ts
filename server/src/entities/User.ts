@@ -1,16 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { IsEmail, Length } from "class-validator";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+  BeforeInsert,
+} from "typeorm";
+import bcryt from "bcryptjs";
 
-@Entity()
+@Entity("users")
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @Index()
+  @IsEmail(undefined, { message: "Wrong Email Format" })
+  @Length(1, 255, { message: "Type Email" })
+  @Column({ unique: true })
+  email: string;
+
+  @Index()
+  @Length(3, 32, { message: "Type Username longer than 3 characters" })
+  @Column()
+  username: string;
 
   @Column()
-  firstName: string;
+  @Length(6, 255, { message: "Type Password longer than 6 characters" })
+  password: string;
 
-  @Column()
-  lastName: string;
+  @OneToMany(() => Post, (post) => post.user)
+  posts: Post[];
 
-  @Column()
-  age: number;
+  @OneToMany(() => Vote, (vote) => vote.user)
+  votes: Vote[];
+
+  @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 6);
+  }
 }
